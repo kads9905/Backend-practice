@@ -1,10 +1,41 @@
 // require(`dotenv`).config({path: './env'});
 import dotenv from "dotenv";
 import connectDB from "./db/index.js";
+import { app } from "./app.js";
+import dns from "node:dns";
 
 dotenv.config();
 
-connectDB();
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+connectDB()
+.then(() => {
+    const server =  app.listen(process.env.PORT || 8000, () => {
+        console.log(` Server is running at port : ${process.env.PORT}`);
+    })
+    server.on("error", (err) => {
+        console.log("Server Error:", err);
+    });
+
+})
+.catch((err) => {
+    console.log("MONGODB db connection failed !!!", err);
+})
+
+
+// whenever asynchronouse method from index.js/db get completed,
+// it returns a promise...now that database has connected successfully
+// .then -> keep sumthin successful
+// .catch -> handle errors
+
+// here we use app.listen only then can our server start
+// till now only our mogodb connected but our application had not 
+// started listening using that database at the port 
+
+
+
+
+
 
 /*
 // approach 1
