@@ -7,3 +7,5 @@ class ApiResponse {
         // server has status codes like informational, client, response etc
     }
 }
+
+export { ApiResponse };
