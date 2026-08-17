@@ -30,7 +30,8 @@ const registerUser = asyncHandler( async (req, res) => {
 
     // we can extract the data coming from req.body...destructure it
     const { fullName, email, username, password } = req.body
-    console.log("email: ", email);
+    // console.log("body: ", req.body)
+    // console.log("email: ", email);
 
 
     // we didnt do anything for file handling yet....all was for data handling
@@ -57,12 +58,12 @@ const registerUser = asyncHandler( async (req, res) => {
     // but what if email is there but username has already been take by someone else 
     // here we use operators $or -> create array and whatever values we want to check
     // put it as an object
-    const existerUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
 
     // if there is an existed, we dont want to  proceed -> we throw an error to user
-    if( existerUser ){
+    if( existedUser ){
         throw new ApiError(409, "User with email or username already exists")
     }
 
@@ -79,8 +80,12 @@ const registerUser = asyncHandler( async (req, res) => {
     // localpath cuz its on our server not yet on cloudinary
     // localpath can or cannot be there but we need atleast 1 path -> we need avatar image
     const avatarLocalPath = req.files?.avatar[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
 
     // check for avatar
     if(!avatarLocalPath){
@@ -91,10 +96,11 @@ const registerUser = asyncHandler( async (req, res) => {
     // good for us we already wrote the method in cloudinary.js
     // this step of uploading with take time
     const avatar = await uploadOnCloudinary(avatarLocalPath); 
+    // if we r not getting coverimagelocalpath here, cloudinary simply returns empty string
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
     // check again for avatr if it has gone properly or not since its a required field
     if(!avatar) {
-        throw new ApiError(400, "Avatar file is required");
+        throw new ApiError(400, "Failed to upload avatar");
     }
 
     // create an object and creating an entry in db
@@ -128,7 +134,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // but here the benefit is we can chain using select method
     // we pass it as strings and select the fields we dont want since by default
     // everything is selected
-    const createdUser = await User.findbyId(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
     // now we can check if user has come or not

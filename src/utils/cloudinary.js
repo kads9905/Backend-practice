@@ -7,7 +7,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-
 // we can create a method and in parameter pass the local file path
 // and uppload it, if successfully uploaded we will simple unlink it
 // a lot of problems arise here as well so use try and catch
@@ -24,13 +23,14 @@ const uploadOnCloudinary = async (localFilePath) => {
             resource_type: "auto"
         })
         // file has been uploaded successfully
-        console.log("Cloudinary response:", response);
-        console.log("file is uploaded on cloudinary!", response.url);
+        // console.log("Cloudinary response:", response);
+        // console.log("file is uploaded on cloudinary!", response.url);
         // after uploading we can get the public url from response.url
+        fs.unlinkSync(localFilePath); //file has been uploaded so no we can unlink it
         return response;
         // now we return the whole response to the user
         // whatever data the user needs it can take it from the response
-    } catch (error) {
+      } catch (error) {
         // error 1 - if files is not uploaded successfully
         // error 2 - and if theres any mistake in local file path
         // but if using cloudinary we know the file is there on the server
