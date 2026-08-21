@@ -25,11 +25,12 @@ router.route("/register").post(
 // or /user in app js
 
 router.route("/login").post(
-    verifyJWT, loginUser
+    loginUser
 )
 
 // secured routes
 router.route("/logout").post(
+    verifyJWT,
     logoutUser
 )
 

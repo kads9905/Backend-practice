@@ -100,7 +100,9 @@ const registerUser = asyncHandler( async (req, res) => {
     // keep the file in that path and give files original name
     // localpath cuz its on our server not yet on cloudinary
     // localpath can or cannot be there but we need atleast 1 path -> we need avatar image
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    // console.log("BODY:", req.body);
+    // console.log("FILES:", req.files);
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
     // const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
     let coverImageLocalPath;
@@ -199,7 +201,7 @@ const loginUser = asyncHandler( async (req,res) => {
     // }
 
     const user = await User.findOne({
-        $or: [{ username },, { email }]
+        $or: [{ username }, { email }]
     })
 
     if (!user) {
