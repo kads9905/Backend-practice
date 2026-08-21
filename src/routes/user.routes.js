@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { loginUser, registerUser, logoutUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -23,6 +24,13 @@ router.route("/register").post(
 // but now we r confused we have to go to /register 
 // or /user in app js
 
+router.route("/login").post(
+    verifyJWT, loginUser
+)
 
+// secured routes
+router.route("/logout").post(
+    logoutUser
+)
 
 export default router;

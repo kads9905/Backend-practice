@@ -4,8 +4,29 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+
+// separate methods for ACCESS AND REFRESH TOKEN - call as per need
+
+const generateAccessAndRefreshTokens = async( userId ) => {
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        // refresh token we save in db to not ask user for pw again and again
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false})
+
+        return { accessToken, refreshToken }
+        
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating refresh and access tokens")
+    }
+}
 // asyncHandler is a higher order function which accepts a function
+
 // this is a method to register user
+
 const registerUser = asyncHandler( async (req, res) => {
     // get user details from frontend
     // validation - check if data given by user is in correct format - not empty
@@ -156,4 +177,110 @@ const registerUser = asyncHandler( async (req, res) => {
 })
 // method will run when a url is hit
 
-export { registerUser };
+
+// LOGIN USER
+// req body -> data
+    // check username or email
+    // find the user
+    // password check
+    // access and refresh token generate and send user
+    // send the tokens in secure cookies
+    // send response that successfully logged in
+const loginUser = asyncHandler( async (req,res) => {
+
+    const { email, username, password } = req.body
+    
+    if (!(username || email)) {
+        throw new ApiError(400, "username or email is required")
+    }
+
+    const user = await User.findOne({
+        $or: [{ username },, { email }]
+    })
+
+    if (!user) {
+        throw new ApiError(404, "User does not exist")
+    }
+
+    // User is mongodb mongooses object
+    // and the methods we created ispwcorrect , generate token is avaialble in our user
+    // which is user
+    const isPasswordValid = await user.isPasswordCorrect(password)
+
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Invalid user credentials")
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+    // now send the acces and refreshtken in cookies
+    // now what info we need to send to user
+    
+    const loggedInUser = await User.findById(user._id).select(" -password -refreshToken")
+
+    // whenever we want to send cookies, we have to design some options
+    // it means by default any one can modify our cookies in the frontend
+    // but when we apply httpOnly and secure -> true, then it can only be modifiable by thru server
+    // we cant modify thru frontend we can see it here but not modify
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        // but we did set these acess and refres in cookies
+        // so why send them separately here?
+        // we r handling the case here where the user is saving the acces and refresh
+        // from his side - if he wants to save in local storage or if hes building a mobile app
+        // not good practice to save these from users side but good practice to send these to user if they need it depending on situation
+
+        new ApiResponse(
+            200,
+            {
+                user: loggedInUser, accessToken, refreshToken
+            },
+            "User logged In Successfully"
+        )
+    )   
+    
+})
+
+
+// LOGOUT USER
+// we need to clear the cookies cuz we can manage it thru
+// server httponly
+// we also need to reset the refresh token in user model
+const logoutUser = asyncHandler( async (req, res) => {
+    // u were logged in, on that basis we did a query on db and added a req.user
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        },
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out"))
+})
+
+export { 
+    registerUser,
+    loginUser,
+    logoutUser
+};
