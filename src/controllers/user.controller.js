@@ -293,7 +293,7 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
     // if anyone is hitting the endpoint -> we can access it from cookies
     const incomingRefreshingToken = req.cookies.refreshToken || req.body.refreshToken
 
-    if(incomingRefreshingToken){
+    if(!incomingRefreshingToken){
         throw new ApiError(401, "Unauthorized request")
     }
 
