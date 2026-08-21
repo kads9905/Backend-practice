@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginUser, registerUser, logoutUser } from "../controllers/user.controller.js";
+import { loginUser, registerUser, logoutUser, refreshAccessToken } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -34,4 +34,11 @@ router.route("/logout").post(
     logoutUser
 )
 
+// in this route we didnt need any verifyJWT cuz we 
+// did all decoded token stuff in this conroller
+// thats why we didnt apply the verifyjwt middleware here , can be used if required
+
+router.route("/refresh-token").post(
+    refreshAccessToken
+)
 export default router;
